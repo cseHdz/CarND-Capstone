@@ -20,7 +20,7 @@ class Controller(object):
 
         # Setup the Throttle PID controller
         kp = 0.1
-        ki = 0.001
+        ki = 0.1
         kd = 0.0
         mn = 0
         mx = 0.2
@@ -42,8 +42,6 @@ class Controller(object):
         self.steer_ratio = steer_ratio
         self.max_lat_accel = max_lat_accel
         self.max_steer_angle = max_steer_angle
-        
-        self.last_time = rospy.get_time()
 
     def control(self, dbw_enabled, current_vel, linear_vel, angular_vel):
         # Change the arg, kwarg list to suit your needs
@@ -63,7 +61,7 @@ class Controller(object):
         self.last_vel = current_vel
 
         current_time = rospy.get_time()
-        sample_time = current_time - self.last_time
+        sample_time = current_time - self.last_time if self.last_time else 0 
         self.last_time = current_time
 
         throttle = self.throttle_controller.step(vel_error, sample_time)
