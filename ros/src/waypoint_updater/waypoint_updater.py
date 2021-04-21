@@ -25,6 +25,7 @@ LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this n
 
 
 class WaypointUpdater(object):
+    
     def __init__(self):
         rospy.init_node('waypoint_updater')
 
@@ -45,15 +46,17 @@ class WaypointUpdater(object):
         self.loop()
         
      def loop(self):
+        
         rate = rospy.Rate(50)
         while not rospy.is_shutdown():
-            if self.pose and self.base_waypoints:
-                # Get closest waypoint
-                closest_waypoint_idx = self.get_closest_waypoint_idx()                
+            
+            if self.pose and self.base_waypoints:   
                 self.publish_waypoints()
+                
             rate.sleep()
             
     def get_closest_waypoint_idx(self):
+        
         x = self.pose.pose.position.x
         y = self.pose.pose.position.y
         closest_idx = self.waypoint_tree.query([x, y], 1)[1]
@@ -119,9 +122,11 @@ class WaypointUpdater(object):
         return temp_wp
 
     def pose_cb(self, msg):
+        
         self.pose = msg
 
     def waypoints_cb(self, waypoints):
+        
         self.base_waypoints = waypoint
         
         if not self.waypoints_2d:
