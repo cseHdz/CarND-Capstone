@@ -2,7 +2,9 @@
 
 import rospy
 from geometry_msgs.msg import PoseStamped
-from styx_msgs.msg import Lane, Waypoint
+from styx_msgs.msg import Lane,  Waypoint
+
+from scipy.spatial import KDTree
 
 import math
 
