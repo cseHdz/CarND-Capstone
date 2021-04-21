@@ -31,6 +31,7 @@ that we have created in the `__init__` function.
 
 '''
 
+
 class DBWNode(object):
     def __init__(self):
         rospy.init_node('dbw_node')
@@ -58,8 +59,8 @@ class DBWNode(object):
                                      fuel_capacity=fuel_capacity,
                                      brake_deadband=brake_deadband, 
                                      decel_limit=decel_limit,
-                                     decel_limit=decel_limit,
-                                     wheel_radius=wheel_radius, 
+                                     accel_limit=accel_limit,
+                                     wheel_radius=wheel_radius,
                                      wheel_base=wheel_base,
                                      steer_ratio=steer_ratio,
                                      max_lat_accel=max_lat_accel,
@@ -80,28 +81,28 @@ class DBWNode(object):
         self.loop()
 
     def loop(self):
-        rate = rospy.Rate(50) # 50Hz
+        rate = rospy.Rate(50)  # 50Hz
         while not rospy.is_shutdown():
             # Get predicted throttle, brake, and steering using `twist_controller`
             # You should only publish the control commands if dbw is enabled
-            if not None in (self.current_vel, self.linear_vel, self.angular_vel):
-            
-                self.throttle, self.brake, self.steering = self.controller.control(self.dbw_enabled,     
+            if None not in (self.current_vel, self.linear_vel, self.angular_vel):
+
+                self.throttle, self.brake, self.steering = self.controller.control(self.dbw_enabled,
                                                                                    self.current_vel,
                                                                                    self.linear_vel,
                                                                                    self.angular_vel)
             if self.dbw_enabled:
-              self.publish(self.throttle, self.brake, self.steer)
-            
+                self.publish(self.throttle, self.brake, self.steer)
+
             rate.sleep()
-            
+
     def dbw_enabled_cb(self, msg):
         self.dbw_enabled = msg.data
-        
+
     def twist_cb(self, msg):
         self.linear_vel = msg.twist.linear.x
         self.angular_vel = msg.twist.angular.z
-        
+
     def velocity_cb(self, msg):
         self.current_vel = msg.twist.linear.x
 

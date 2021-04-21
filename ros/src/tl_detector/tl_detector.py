@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import rospy
 from std_msgs.msg import Int32
 from geometry_msgs.msg import PoseStamped, Pose
@@ -13,8 +14,9 @@ import yaml
 
 STATE_COUNT_THRESHOLD = 3
 
+
 class TLDetector(object):
-    
+
     def __init__(self):
         rospy.init_node('tl_detector')
 
@@ -49,7 +51,7 @@ class TLDetector(object):
         self.last_state = TrafficLight.UNKNOWN
         self.last_wp = -1
         self.state_count = 0
-        
+
         self.waypoints_2d = None
         self.waypoint_tree = None
 
@@ -60,8 +62,8 @@ class TLDetector(object):
 
     def waypoints_cb(self, waypoints):
         self.waypoints = waypoints
-        
-        if not self.waypoints_2d
+
+        if not self.waypoints_2d:
             self.waypoints_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y]
                                  for waypoint in waypoints.waypoints]
             self.waypoint_tree = KDTree(self.waypoints_2d)
@@ -99,7 +101,6 @@ class TLDetector(object):
             self.upcoming_red_light_pub.publish(Int32(self.last_wp))
         self.state_count += 1
 
-    
      def get_closest_waypoint(self, x, y):
             
         """Identifies the closest path waypoint to the given position
