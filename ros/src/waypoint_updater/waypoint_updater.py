@@ -9,6 +9,7 @@ from styx_msgs.msg import Lane,  Waypoint
 from scipy.spatial import KDTree
 
 import math
+import numpy as np
 
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
@@ -26,6 +27,7 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
 LOOKAHEAD_WPS = 200  # Number of waypoints we will publish. You can change this number
+MAX_DECEL = 0.5
 
 
 class WaypointUpdater(object):
@@ -37,7 +39,7 @@ class WaypointUpdater(object):
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
 
         # Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
-        rospy.Subscriber('traffic_waypoint', Int32, self.traffic_cb)
+        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
         
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
@@ -46,6 +48,7 @@ class WaypointUpdater(object):
         self.base_waypoints = None
         self.waypoints_2d = None
         self.waypoint_tree = None
+        self.stopline_wp_idx = -1
 
         self.loop()
 
@@ -83,7 +86,7 @@ class WaypointUpdater(object):
     def publish_waypoints(self):
         
         final_lane = self.generate_lane()
-        self.final_waypoints_pub.publish(lane)
+        self.final_waypoints_pub.publish(final_lane)
                                                        
     def generate_lane(self):
 
@@ -98,22 +101,20 @@ class WaypointUpdater(object):
         if self.stopline_wp_idx == -1 or (self.stopline_wp_idx >= farthest_idx):
             lane.waypoints = base_waypoints
         else:
-            lane.waypoints = self.decelrate_waypoints(base_waypoints, closest_idx)
+            lane.waypoints = self.decelerate_waypoints(base_waypoints, closest_idx)
                                           
         return lane
     
-    def decelerate_waypoints (self, waypoints, closest_idx):
+    def decelerate_waypoints(self, waypoints, closest_idx):
         
-        temp_wp =[]
-        
-        # The stop idx doesn't change
-        stop_idx = max(self.stopline_wp_idx - closest_idx - 2, 0)
+        temp_wp = []
         
         for i, wp in enumerate(waypoints):
 
             p = Waypoint()
             p.pose = wp.pose
                        
+            stop_idx = max(self.stopline_wp_idx - closest_idx - 2, 0)
             dist = self.distance(waypoints, i, stop_idx)
             vel = math.sqrt(2 * MAX_DECEL * dist)
 
@@ -131,17 +132,16 @@ class WaypointUpdater(object):
 
     def waypoints_cb(self, waypoints):
         
-        self.base_waypoints = waypoint
+        self.base_waypoints = waypoints
         
         if not self.waypoints_2d:
             self.waypoints_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y]
                                  for waypoint in waypoints.waypoints]
             self.waypoint_tree = KDTree(self.waypoints_2d)
                          
-
     def traffic_cb(self, msg):
         # Callback for /traffic_waypoint message. Implement
-        seld.stopline_wp_idx = msg.data
+        self.stopline_wp_idx = msg.data
 
     def obstacle_cb(self, msg):
         # Callback for /obstacle_waypoint message.
@@ -155,11 +155,16 @@ class WaypointUpdater(object):
         waypoints[waypoint].twist.twist.linear.x = velocity
 
     def distance(self, waypoints, wp1, wp2):
+        
+        if wp1 >= wp2:
+            return 0       
+        
         dist = 0
         dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
         for i in range(wp1, wp2+1):
-            dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
-            wp1 = i
+            
+            dist += dl(waypoints[i].pose.pose.position, waypoints[i +1].pose.pose.position)
+            
         return dist
 
 
